@@ -1,0 +1,140 @@
+// Conflux data model — see docs/04-data-model.md
+// One schema; imported by the route handlers and the realtime layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum SnapshotKind {
+  MANUAL
+  AUTO
+  COMPACTION
+}
+
+// ---- Identity (Auth.js) ----
+
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String?  @unique
+  image        String?
+  passwordHash String? // for the credentials demo provider (bcrypt)
+  createdAt    DateTime @default(now())
+
+  ownedDocs   Document[]           @relation("owner")
+  memberships DocumentMembership[]
+  snapshots   DocumentSnapshot[]
+  accounts    Account[]
+  sessions    Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---- Documents + RBAC ----
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String   @default("Untitled")
+  ownerId     String
+  stateVector Bytes? // cached latest state vector for quick diffs
+  seq         BigInt   @default(0) // monotonic update counter (mirrors latest DocumentUpdate.seq)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User                 @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  memberships DocumentMembership[]
+  updates     DocumentUpdate[]
+  snapshots   DocumentSnapshot[]
+
+  @@index([ownerId])
+}
+
+model DocumentMembership {
+  id         String   @id @default(cuid())
+  documentId String
+  userId     String
+  role       Role
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId]) // one role per user per document
+  @@index([userId]) // "my documents" lookups
+}
+
+// Append-only CRDT update log (the hot write path)
+model DocumentUpdate {
+  seq        BigInt   @default(autoincrement())
+  documentId String
+  update     Bytes // Yjs binary update (size-bounded — see docs/09)
+  origin     String? // producing clientId (debug/audit)
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, seq]) // ordered append-only log per document
+}
+
+// Powers both version history (MANUAL/AUTO) and compaction (COMPACTION)
+model DocumentSnapshot {
+  id          String       @id @default(cuid())
+  documentId  String
+  label       String
+  kind        SnapshotKind @default(MANUAL)
+  content     Json? // ProseMirror JSON (MANUAL/AUTO) — used for preview + non-destructive restore
+  state       Bytes? // Yjs encodeStateAsUpdate — used by COMPACTION (optional for MANUAL/AUTO)
+  snapshot    Bytes? // Yjs Y.snapshot (optional)
+  createdById String?
+  createdAt   DateTime     @default(now())
+
+  document  Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdBy User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([documentId, createdAt])
+}

@@ -1,0 +1,19 @@
+node_modules
+.next
+.git
+# NOTE: .gitignore is intentionally NOT ignored — Tailwind v4's content detection
+# uses it, and its absence in the image produced an unstyled production build.
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+coverage
+e2e
+playwright-report
+test-results
+.vscode
+.idea
+*.mjs
+*.local
+scratchpad

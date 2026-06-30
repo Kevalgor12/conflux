@@ -1,0 +1,9 @@
+import { z } from 'zod'
+
+// Credentials sign-in payload.
+export const signInSchema = z.object({
+  email: z.string().email('Enter a valid email'),
+  password: z.string().min(1, 'Password is required')
+})
+
+export type SignInInput = z.infer<typeof signInSchema>

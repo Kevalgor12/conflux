@@ -1,0 +1,148 @@
+@import 'tailwindcss';
+
+/* Explicit content sources. Tailwind v4 auto-detection relies on .git/.gitignore,
+   which are absent in the production Docker image — without these the build emits
+   only the reset and ships an unstyled site. Explicit globs (relative to this file)
+   make detection deterministic. */
+/* prettier-ignore */
+@source "../app/**/*.{ts,tsx}";
+/* prettier-ignore */
+@source "../components/**/*.{ts,tsx}";
+/* prettier-ignore */
+@source "../lib/**/*.{ts,tsx}";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+  --ring: #a5b4fc;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+.dark {
+  --background: #0a0a0b;
+  --foreground: #fafafa;
+  --card: #131316;
+  --muted: #1c1c20;
+  --muted-foreground: #a1a1aa;
+  --border: #27272a;
+  --ring: #6366f1;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Editor (ProseMirror / Tiptap) ---- */
+.ProseMirror-conflux {
+  min-height: 60vh;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.ProseMirror-conflux > * + * {
+  margin-top: 0.75em;
+}
+.ProseMirror-conflux h1 {
+  font-size: 1.875rem;
+  font-weight: 600;
+}
+.ProseMirror-conflux h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+.ProseMirror-conflux h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.ProseMirror-conflux ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.ProseMirror-conflux ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+.ProseMirror-conflux blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+.ProseMirror-conflux code {
+  background: var(--muted);
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.ProseMirror-conflux pre {
+  background: var(--muted);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.ProseMirror-conflux p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* ---- Collaboration carets (remote cursors / presence) ---- */
+.collaboration-caret__caret {
+  border-left: 1px solid #0d0d0d;
+  border-right: 1px solid #0d0d0d;
+  margin-left: -1px;
+  margin-right: -1px;
+  position: relative;
+  word-break: normal;
+  pointer-events: none;
+}
+.collaboration-caret__label {
+  border-radius: 3px 3px 3px 0;
+  color: #fff;
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 600;
+  left: -1px;
+  line-height: normal;
+  padding: 0.1rem 0.3rem;
+  position: absolute;
+  top: -1.4em;
+  user-select: none;
+  white-space: nowrap;
+}
